@@ -44,14 +44,26 @@ public static class DbSeeder
         {
             await appServices.AuthService().RegisterAsync(new RegisterInput
             {
-                FullName = "John Lucy",
-                Email = "asd@asd.com",
+                FullName = "Ozgur GUL",
+                Email = "admin@admin.com",
+                Password = "Asd32!#"
+            });
+            await appServices.AuthService().RegisterAsync(new RegisterInput
+            {
+                FullName = "Sergey Brin",
+                Email = "sergey@brin.com",
+                Password = "Asd32!#"
+            });
+            await appServices.AuthService().RegisterAsync(new RegisterInput
+            {
+                FullName = "Larry Page",
+                Email = "larry@page.com",
                 Password = "Asd32!#"
             });
             await appServices.AuthService().RegisterAsync(new RegisterInput
             {
                 FullName = "Mark Zuckerberg",
-                Email = "asd2@asd.com",
+                Email = "mark@zuckerberg.com",
                 Password = "Asd32!#"
             });
             await appServices.UserService().AddUserToRoles(new AddUserToRoleInput()
