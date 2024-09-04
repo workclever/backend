@@ -8,5 +8,6 @@ public class UpdateTaskPropertyInput
     [Required] [ValidTaskId] public int TaskId { get; set; }
 
     [Required] public string Property { get; set; }
-    public string Value { get; set; }
+
+    public string? Value { get; set; }
 }

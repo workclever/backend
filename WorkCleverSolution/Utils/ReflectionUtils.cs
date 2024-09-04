@@ -16,17 +16,17 @@ public static class ReflectionUtils
 
             if (propType == typeof(string))
             {
-                return (string) propertyInfo.GetValue(obj);
+                return (string)propertyInfo.GetValue(obj);
             }
 
             if (propType == typeof(int))
             {
-                return ((int) propertyInfo.GetValue(obj)).ToString();
+                return ((int)propertyInfo.GetValue(obj)).ToString();
             }
 
             if (propType == typeof(bool))
             {
-                return ((bool) propertyInfo.GetValue(obj)).ToString();
+                return ((bool)propertyInfo.GetValue(obj)).ToString();
             }
         }
 
@@ -39,34 +39,52 @@ public static class ReflectionUtils
         if (propertyInfo != null)
         {
             var propType = propertyInfo.PropertyType;
-            if (propType.IsGenericType &&
-                propType.GetGenericTypeDefinition() == typeof(Nullable<>))
+            bool isNullable = propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof(Nullable<>);
+
+            if (isNullable)
             {
-                propType = propType.GetGenericArguments()[0];
+                propType = Nullable.GetUnderlyingType(propType);
             }
 
-            if (propType == typeof(string))
+            if (value == null)
+            {
+                propertyInfo.SetValue(obj, null, null);
+            }
+            else if (propType == typeof(string))
             {
                 propertyInfo.SetValue(obj, value, null);
             }
-
-            if (propType == typeof(int))
+            else if (propType == typeof(int))
             {
-                // client sends 'null', we have restrictions
-                if (value == "null")
+                if (int.TryParse(value, out int intValue))
                 {
-                    propertyInfo.SetValue(obj, null, null);
+                    propertyInfo.SetValue(obj, intValue, null);
                 }
                 else
                 {
-                    propertyInfo.SetValue(obj, Int32.Parse(value), null);
+                    throw new ArgumentException($"Cannot convert '{value}' to Int32.");
                 }
-               
             }
             else if (propType == typeof(bool))
             {
-                propertyInfo.SetValue(obj, Boolean.Parse(value), null);
+                if (bool.TryParse(value, out bool boolValue))
+                {
+                    propertyInfo.SetValue(obj, boolValue, null);
+                }
+                else
+                {
+                    throw new ArgumentException($"Cannot convert '{value}' to Boolean.");
+                }
             }
+            // Add more type checks as needed
+            else
+            {
+                throw new NotSupportedException($"Type {propType} is not supported.");
+            }
+        }
+        else
+        {
+            throw new ArgumentException($"Property '{propertyName}' not found on object of type {obj.GetType().Name}.");
         }
     }
 }
