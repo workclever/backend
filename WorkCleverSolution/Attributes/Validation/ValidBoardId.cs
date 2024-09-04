@@ -11,7 +11,7 @@ public class ValidBoardId : ValidationAttribute
         var boardId = (int) value;
         if (boardId <= 0)
         {
-            return new ValidationResult("Please select a project");
+            return new ValidationResult("Please select a board");
         }
 
         var boardService = validationContext.GetService<IBoardService>();

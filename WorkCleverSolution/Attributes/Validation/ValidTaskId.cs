@@ -11,7 +11,7 @@ public class ValidTaskId : ValidationAttribute
         var taskId = (int) value;
         if (taskId <= 0)
         {
-            return new ValidationResult("Please select a project");
+            return new ValidationResult("Please select a task");
         }
 
         var taskService = validationContext.GetService<ITaskService>();
