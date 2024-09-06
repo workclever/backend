@@ -21,7 +21,12 @@ public static class ReflectionUtils
 
             if (propType == typeof(int))
             {
-                return ((int)propertyInfo.GetValue(obj)).ToString();
+                var value = propertyInfo.GetValue(obj) as int?;
+                if (!value.HasValue || value.Value == 0)
+                {
+                    return "";
+                }
+                return value.ToString();
             }
 
             if (propType == typeof(bool))
