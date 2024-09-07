@@ -2,7 +2,7 @@ using WorkCleverSolution.Data;
 using Microsoft.EntityFrameworkCore;
 using WorkCleverSolution.Dto.Project.Task;
 using WorkCleverSolution.Utils;
-using IHostingEnvironment = Microsoft.AspNetCore.Hosting.IHostingEnvironment;
+using System.Security.Claims;
 
 namespace WorkCleverSolution.Services;
 
@@ -11,7 +11,7 @@ public interface ITaskService
     Task<TaskOutput> CreateTask(int userId, CreateTaskInput input);
     Task<List<TaskOutput>> ListBoardTasks(int boardId);
     Task<List<TaskOutput>> ListProjectTasks(int projectId);
-    Task<List<TaskOutput>> SearchTasks(string text, int projectId);
+    Task<List<TaskOutput>> SearchTasks(ClaimsPrincipal user, string text, int projectId);
     Task DeleteTask(int userId, int taskId);
     Task<TaskItem> GetByIdInternal(int taskId);
     Task<TaskOutput> GetById(int taskId);
@@ -35,14 +35,17 @@ public class TaskService : ITaskService
     private readonly IRepository<TaskAttachment> _taskAttachmentRepository;
     private readonly IFileUploadService _fileUploadService;
     private readonly IUserNotificationService _userNotificationService;
+    private readonly IUserService _userService;
 
     public TaskService(ApplicationDbContext dbContext,
         IFileUploadService fileUploadService,
-        IUserNotificationService userNotificationService)
+        IUserNotificationService userNotificationService,
+        IUserService userService)
     {
         _fileUploadService = fileUploadService;
         _userNotificationService = userNotificationService;
         _dbContext = dbContext;
+        _userService = userService;
         _taskRepository = new Repository<TaskItem>(dbContext);
         _taskAttachmentRepository = new Repository<TaskAttachment>(dbContext);
     }
@@ -113,13 +116,30 @@ public class TaskService : ITaskService
         return tasks;
     }
 
-    public async Task<List<TaskOutput>> SearchTasks(string text, int projectId)
+    public async Task<List<TaskOutput>> SearchTasks(ClaimsPrincipal user, string text, int projectId)
     {
         text = text.ToLower().Trim();
+        var userProjectIds = (await _userService.ListUserProjects(user)).Select(r => r.Id);
+
+        if (projectId == 0)
+        {
+
+            return await _taskRepository
+           .Where(r => userProjectIds.Contains(r.ProjectId) &&
+                        (r.Description.ToLower().Contains(text) ||
+                        r.Title.ToLower().Contains(text) ||
+                        text.Contains(r.Id.ToString()))
+           )
+           .Select(r => MapTaskToOutput(r))
+           .ToListAsync();
+        }
+
         return await _taskRepository
-            .Where(r => (r.Description.ToLower().Contains(text) ||
+        // TODO find a better way to incorporate [ValidProjectId]
+            .Where(r => r.ProjectId == projectId && userProjectIds.Contains(projectId) &&
+                        (r.Description.ToLower().Contains(text) ||
                          r.Title.ToLower().Contains(text) ||
-                         text.Contains(r.Id.ToString())) && r.ProjectId == projectId
+                         text.Contains(r.Id.ToString()))
             )
             .Select(r => MapTaskToOutput(r))
             .ToListAsync();

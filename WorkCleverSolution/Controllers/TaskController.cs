@@ -24,9 +24,9 @@ public class TaskController : BaseApiController
 
     [HttpGet]
     [JwtAuthorize]
-    public async Task<ServiceResult> SearchTasks([Required] string text, [ValidProjectId] int projectId)
+    public async Task<ServiceResult> SearchTasks([Required] string text, int projectId)
     {
-        return Wrap(await Services.TaskService().SearchTasks(text, projectId));
+        return Wrap(await Services.TaskService().SearchTasks(User, text, projectId));
     }
 
     [HttpGet]

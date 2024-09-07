@@ -222,7 +222,7 @@ public class CustomFieldService : ICustomFieldService
                         }
                         else if (customField.FieldType == CustomFieldType.SingleSelect)
                         {
-                            if (string.IsNullOrEmpty(customFieldValue.Value))
+                            if (string.IsNullOrEmpty(customFieldValue.Value) || customFieldValue.Value == "undefined")
                             {
                                 computedValue = 0;
                             }
@@ -269,6 +269,7 @@ public class CustomFieldService : ICustomFieldService
             await _taskCustomFieldValueRepository.Create(taskCustomFieldValue);
         }
 
+        // TODO cast properly here
         taskCustomFieldValue.Value = input.Value;
         await _taskCustomFieldValueRepository.Update(taskCustomFieldValue);
     }
