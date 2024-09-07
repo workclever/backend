@@ -9,7 +9,6 @@ namespace WorkCleverSolution.Migrations
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            Console.WriteLine("UPUPUPUP");
             migrationBuilder.CreateTable(
                 name: "Boards",
                 columns: table => new
