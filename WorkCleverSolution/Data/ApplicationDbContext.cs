@@ -18,6 +18,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
     public DbSet<TaskRelation> TaskRelations { get; set; }
     public DbSet<TaskChangeLog> TaskChangeLogs { get; set; }
     public DbSet<TaskComment> TaskComments { get; set; }
+    public DbSet<TaskAssignee> TaskAssignees { get; set; }
     public DbSet<UserEntityAccess> UserEntityAccesses { get; set; }
     public DbSet<UserPreference> UserPreferences { get; set; }
     public DbSet<SiteSettings> SiteSettings { get; set; }
