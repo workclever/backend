@@ -29,6 +29,7 @@ public class Services : IServices
     private readonly ITaskRelationService _taskRelationService;
     private readonly IUserEntityAccessManagerService _accessManagerService;
     private readonly ITaskRelationTypeDefService _taskRelationTypeDefService;
+    private readonly ITaskAssigneeService _taskAssigneeService;
     private readonly ISiteSettingsService _siteSettingsService;
     private readonly ICustomFieldService _customFieldService;
     private readonly IUserNotificationService _userNotificationService;
@@ -46,7 +47,8 @@ public class Services : IServices
         ITaskRelationTypeDefService taskRelationTypeDefService,
         ISiteSettingsService siteSettingsService,
         ICustomFieldService customFieldService,
-        IUserNotificationService userNotificationService)
+        IUserNotificationService userNotificationService,
+        ITaskAssigneeService taskAssigneeService)
     {
         _authService = authService;
         _userService = userService;
@@ -61,6 +63,7 @@ public class Services : IServices
         _siteSettingsService = siteSettingsService;
         _customFieldService = customFieldService;
         _userNotificationService = userNotificationService;
+        _taskAssigneeService = taskAssigneeService;
     }
 
     public IAuthService AuthService()
@@ -126,5 +129,10 @@ public class Services : IServices
     public ICustomFieldService CustomFieldService()
     {
         return _customFieldService;
+    }
+    
+    public ITaskAssigneeService TaskAssigneeService()
+    {
+        return _taskAssigneeService;
     }
 }

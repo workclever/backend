@@ -36,21 +36,24 @@ public class TaskService : ITaskService
     private readonly IFileUploadService _fileUploadService;
     private readonly IUserNotificationService _userNotificationService;
     private readonly IUserService _userService;
+    private readonly ITaskAssigneeService _taskAssigneeService;
 
     public TaskService(ApplicationDbContext dbContext,
         IFileUploadService fileUploadService,
         IUserNotificationService userNotificationService,
-        IUserService userService)
+        IUserService userService,
+        ITaskAssigneeService taskAssigneeService)
     {
         _fileUploadService = fileUploadService;
         _userNotificationService = userNotificationService;
         _dbContext = dbContext;
         _userService = userService;
+        _taskAssigneeService = taskAssigneeService;
         _taskRepository = new Repository<TaskItem>(dbContext);
         _taskAttachmentRepository = new Repository<TaskAttachment>(dbContext);
     }
 
-    private static TaskOutput MapTaskToOutput(TaskItem taskItem)
+    private static TaskOutput MapTaskToOutput(TaskItem taskItem, List<int> assigneeUserIds)
     {
         return new TaskOutput
         {
@@ -60,12 +63,25 @@ public class TaskService : ITaskService
             ProjectId = taskItem.ProjectId,
             BoardId = taskItem.BoardId,
             ColumnId = taskItem.ColumnId,
-            AssigneeUserId = taskItem.AssigneeUserId,
+            AssigneeUserIds = assigneeUserIds,
             ReporterUserId = taskItem.ReporterUserId,
             ParentTaskItemId = taskItem.ParentTaskItemId,
             Order = taskItem.Order,
             Slug = $"{taskItem.Project.Slug}-{taskItem.Id}"
         };
+    }
+    
+    private async Task<List<TaskOutput>> ProcessTasksWithAssignees(List<TaskItem> tasks)
+    {
+        var taskOutputs = new List<TaskOutput>();
+
+        foreach (var task in tasks)
+        {
+            var assigneeUserIds = await _taskAssigneeService.GetTaskAssignees(task.Id);
+            taskOutputs.Add(MapTaskToOutput(task, assigneeUserIds));
+        }
+
+        return taskOutputs;
     }
 
     public async Task<TaskOutput> CreateTask(int userId, CreateTaskInput input)
@@ -84,14 +100,13 @@ public class TaskService : ITaskService
             BoardId = input.BoardId,
             ColumnId = input.ColumnId,
             ReporterUserId = userId,
-            AssigneeUserId = input.AssigneeUserId,
             ParentTaskItemId = input.ParentTaskItemId,
             Order = lastOrder == 0 ? 1 : lastOrder + 1
         };
 
         await _taskRepository.Create(task);
 
-        return MapTaskToOutput(task);
+        return MapTaskToOutput(task, await _taskAssigneeService.GetTaskAssignees(task.Id));
     }
 
     public async Task<List<TaskOutput>> ListBoardTasks(int boardId)
@@ -99,10 +114,9 @@ public class TaskService : ITaskService
         var tasks = await _taskRepository
             .Where(r => r.BoardId == boardId)
             .Include(r => r.Project)
-            .Select(r => MapTaskToOutput(r))
             .ToListAsync();
 
-        return tasks;
+        return await ProcessTasksWithAssignees(tasks);
     }
 
     public async Task<List<TaskOutput>> ListProjectTasks(int projectId)
@@ -110,10 +124,9 @@ public class TaskService : ITaskService
         var tasks = await _taskRepository
             .Where(r => r.ProjectId == projectId)
             .Include(r => r.Project)
-            .Select(r => MapTaskToOutput(r))
             .ToListAsync();
-
-        return tasks;
+   
+        return await ProcessTasksWithAssignees(tasks);
     }
 
     public async Task<List<TaskOutput>> SearchTasks(ClaimsPrincipal user, string text, int projectId)
@@ -124,25 +137,23 @@ public class TaskService : ITaskService
         if (projectId == 0)
         {
 
-            return await _taskRepository
+            return await ProcessTasksWithAssignees(await _taskRepository
            .Where(r => userProjectIds.Contains(r.ProjectId) &&
                         (r.Description.ToLower().Contains(text) ||
                         r.Title.ToLower().Contains(text) ||
                         text.Contains(r.Id.ToString()))
            )
-           .Select(r => MapTaskToOutput(r))
-           .ToListAsync();
+           .ToListAsync());
         }
 
-        return await _taskRepository
+        return await ProcessTasksWithAssignees(await _taskRepository
         // TODO find a better way to incorporate [ValidProjectId]
             .Where(r => r.ProjectId == projectId && userProjectIds.Contains(projectId) &&
                         (r.Description.ToLower().Contains(text) ||
                          r.Title.ToLower().Contains(text) ||
                          text.Contains(r.Id.ToString()))
             )
-            .Select(r => MapTaskToOutput(r))
-            .ToListAsync();
+            .ToListAsync());
     }
 
     // TODO: delete attachments as well
@@ -192,7 +203,7 @@ public class TaskService : ITaskService
     public async Task<TaskOutput> GetById(int taskId)
     {
         var task = await GetByIdInternal(taskId);
-        return MapTaskToOutput(task);
+        return MapTaskToOutput(task, await _taskAssigneeService.GetTaskAssignees(task.Id));
     }
 
     public async Task MoveTaskToColumn(int userId, MoveTaskInput input)
@@ -249,21 +260,16 @@ public class TaskService : ITaskService
 
     public async Task UpdateTaskAssigneeUser(int userId, UpdateTaskAssigneeUserInput input)
     {
-        await UpdateTaskProperty(userId, new UpdateTaskPropertyInput
-        {
-            TaskId = input.TaskId,
-            Property = "AssigneeUserId",
-            Value = input.UserId.ToString()
-        });
+        await _taskAssigneeService.SetTaskAssignees(input.TaskId, input.UserIds);
         // Operating user someone else, notify new assignee user
-        if (userId != input.UserId)
-        {
-            const string type = "TASK_ASSIGNED";
-            const string content = "Task is assigned to you.";
-            var byUserId = userId;
-            var toUserId = input.UserId;
-            await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, input.TaskId);
-        }
+        // if (userId != input.UserId)
+        // {
+        //     const string type = "TASK_ASSIGNED";
+        //     const string content = "Task is assigned to you.";
+        //     var byUserId = userId;
+        //     var toUserId = input.UserId;
+        //     await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, input.TaskId);
+        // }
     }
 
     public async Task<List<TaskChangeLogOutput>> ListTaskChangeLog(int taskId)
@@ -323,18 +329,13 @@ public class TaskService : ITaskService
             AttachmentUrl = accessUrl
         });
 
-        if (task.AssigneeUserId == null)
-        {
-            return;
-        }
-
         // Operating user someone else, notify task assignee user
-        if (userId != task.AssigneeUserId)
+        foreach (var taskAssignee in await _taskAssigneeService.GetTaskAssignees(taskId))
         {
             const string type = "TASK_ATTACHMENT_UPLOADED";
             const string content = "A file is attached.";
             var byUserId = userId;
-            var toUserId = task.AssigneeUserId.Value;
+            var toUserId = taskAssignee;
             await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, taskId);
         }
     }

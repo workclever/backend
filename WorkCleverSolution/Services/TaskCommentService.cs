@@ -18,10 +18,15 @@ public class TaskCommentService : ITaskCommentService
     private readonly IRepository<TaskItem> _taskRepository;
     private readonly IRepository<TaskComment> _taskCommentRepository;
     private readonly IUserNotificationService _userNotificationService;
+    private readonly ITaskAssigneeService _taskAssigneeService;
 
-    public TaskCommentService(ApplicationDbContext dbContext, IUserNotificationService userNotificationService)
+    public TaskCommentService(
+        ApplicationDbContext dbContext,
+        IUserNotificationService userNotificationService,
+        ITaskAssigneeService taskAssigneeService)
     {
         _userNotificationService = userNotificationService;
+        _taskAssigneeService = taskAssigneeService;
         _taskRepository = new Repository<TaskItem>(dbContext);
         _taskCommentRepository = new Repository<TaskComment>(dbContext);
     }
@@ -82,19 +87,13 @@ public class TaskCommentService : ITaskCommentService
         };
         await _taskCommentRepository.Create(comment);
 
-        var task = await _taskRepository.GetById(input.TaskId);
-        if (task.AssigneeUserId == null)
-        {
-            return;
-        }
-
         // Operating user someone else, notify task assignee user
-        if (userId != task.AssigneeUserId)
+        foreach (var taskAssignee in await _taskAssigneeService.GetTaskAssignees(input.TaskId))
         {
             const string type = "TASK_COMMENTED";
             const string content = "A comment is made.";
             var byUserId = userId;
-            var toUserId = task.AssigneeUserId.Value;
+            var toUserId = taskAssignee;
             await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, input.TaskId);
         }
     }

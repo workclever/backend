@@ -16,6 +16,6 @@ public class TaskItem : TimeAwareEntity
     public int BoardId { get; set; }
     public int ColumnId { get; set; }
     public int? ReporterUserId { get; set; }
-    public int? AssigneeUserId { get; set; }
+    
     public int Order { get; set; }
 }

@@ -10,6 +10,8 @@ public class TaskOutput
     public string Description { get; set; }
     public int? ReporterUserId { get; set; }
     public int? AssigneeUserId { get; set; }
+    
+    public List<int> AssigneeUserIds { get; set; }
     public int? ParentTaskItemId { get; set; }
     public int Order { get; set; }
     public string Slug { get; set; }

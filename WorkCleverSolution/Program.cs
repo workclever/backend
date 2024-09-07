@@ -67,6 +67,7 @@ builder.Services.AddScoped<IColumnService, ColumnService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ITaskCommentService, TaskCommentService>();
 builder.Services.AddScoped<ITaskRelationService, TaskRelationService>();
+builder.Services.AddScoped<ITaskAssigneeService, TaskAssigneeService>();
 builder.Services.AddScoped<IUserEntityAccessManagerService, UserEntityAccessManagerService>();
 builder.Services.AddScoped<ITaskRelationTypeDefService, TaskRelationTypeDefService>();
 builder.Services.AddScoped<ISiteSettingsService, SiteSettingsService>();
