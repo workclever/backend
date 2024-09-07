@@ -23,8 +23,8 @@ public static class DbSeeder
             await dbContext.SiteSettings.AddAsync(new SiteSettings
             {
                 DefaultTimezone = "Europe/Amsterdam",
-                DefaultDateTimeFormat = "yyyy-MM-dd H:mm:ss",
-                DefaultDateFormat = "dd/MM/yyyy"
+                DefaultDateTimeFormat = "DD/MM/YYYY HH:mm",
+                DefaultDateFormat = "DD/MM/YYYY"
             });
             await dbContext.SaveChangesAsync();
             Console.WriteLine("Site settings created");
