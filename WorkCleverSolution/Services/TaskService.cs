@@ -197,7 +197,7 @@ public class TaskService : ITaskService
 
     public async Task<TaskItem> GetByIdInternal(int taskId)
     {
-        return await _taskRepository.GetById(taskId);
+        return await _taskRepository.GetByIdWithIncludes(taskId, t => t.Project);
     }
 
     public async Task<TaskOutput> GetById(int taskId)

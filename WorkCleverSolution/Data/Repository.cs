@@ -7,6 +7,7 @@ public interface IRepository<T> where T : TimeAwareEntity
 {
     Task<List<T>> GetAll();
     Task<T> GetById(int id);
+    Task<T> GetByIdWithIncludes(int id, params Expression<Func<T, object>>[] includeProperties);
     IQueryable<T> Where(Expression<Func<T, bool>> predicate);
     Task Create(T entity);
     Task Update(T entity);
@@ -34,6 +35,18 @@ public class Repository<T> : IRepository<T> where T : TimeAwareEntity
     public async Task<T> GetById(int id)
     {
         return await _entities.SingleOrDefaultAsync(r => r.Id == id);
+    }
+    
+    public async Task<T> GetByIdWithIncludes(int id, params Expression<Func<T, object>>[] includeProperties)
+    {
+        IQueryable<T> query = _entities;
+
+        foreach (var includeProperty in includeProperties)
+        {
+            query = query.Include(includeProperty);
+        }
+
+        return await query.SingleOrDefaultAsync(r => r.Id == id);
     }
 
     public IQueryable<T> Where(Expression<Func<T, bool>> predicate)
