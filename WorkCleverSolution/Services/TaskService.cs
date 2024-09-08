@@ -18,11 +18,8 @@ public interface ITaskService
     Task MoveTaskToColumn(int userId, MoveTaskInput input);
     Task UpdateTaskProperty(int userId, UpdateTaskPropertyInput input);
     Task UpdateTaskAssigneeUser(int userId, UpdateTaskAssigneeUserInput input);
-    Task<List<TaskChangeLogOutput>> ListTaskChangeLog(int taskId);
-
     Task CreateSubtaskRelation(int parentTaskItemId, int taskId);
     Task UploadTaskAttachmentInput(int userId, int taskId, UploadAttachmentInput input);
-
     Task<List<TaskAttachment>> ListTaskAttachments(int taskId);
     Task UpdateTaskOrders(UpdateTaskOrdersInput input);
     Task SendTaskToTopOrBottom(SendTaskToTopOrBottomInput input);
@@ -37,18 +34,21 @@ public class TaskService : ITaskService
     private readonly IUserNotificationService _userNotificationService;
     private readonly IUserService _userService;
     private readonly ITaskAssigneeService _taskAssigneeService;
+    private readonly ITaskChangeLogService _taskChangeLogService;
 
     public TaskService(ApplicationDbContext dbContext,
         IFileUploadService fileUploadService,
         IUserNotificationService userNotificationService,
         IUserService userService,
-        ITaskAssigneeService taskAssigneeService)
+        ITaskAssigneeService taskAssigneeService,
+        ITaskChangeLogService taskChangeLogService)
     {
         _fileUploadService = fileUploadService;
         _userNotificationService = userNotificationService;
         _dbContext = dbContext;
         _userService = userService;
         _taskAssigneeService = taskAssigneeService;
+        _taskChangeLogService = taskChangeLogService;
         _taskRepository = new Repository<TaskItem>(dbContext);
         _taskAttachmentRepository = new Repository<TaskAttachment>(dbContext);
     }
@@ -222,24 +222,6 @@ public class TaskService : ITaskService
         });
     }
 
-    private async Task CreateChangeLog(int userId, TaskItem oldTaskItem, string property, string oldValue,
-        string newValue)
-    {
-        var changeLog = new TaskChangeLog
-        {
-            ProjectId = oldTaskItem.ProjectId,
-            BoardId = oldTaskItem.BoardId,
-            TaskId = oldTaskItem.Id,
-            UserId = userId,
-            Property = property,
-            OldValue = oldValue,
-            NewValue = newValue
-        };
-
-        await _dbContext.TaskChangeLogs.AddAsync(changeLog);
-        await _dbContext.SaveChangesAsync();
-    }
-
     public async Task UpdateTaskProperty(int userId, UpdateTaskPropertyInput input)
     {
         var task = await GetByIdInternal(input.TaskId);
@@ -255,30 +237,13 @@ public class TaskService : ITaskService
         ReflectionUtils.SetObjectProperty(task, input.Property, input.Value);
         await _taskRepository.Update(task);
 
-        await CreateChangeLog(userId, task, input.Property, oldValue, newValue);
+        await _taskChangeLogService.CreateChangeLog(userId, task, input.Property, oldValue, newValue);
     }
 
     public async Task UpdateTaskAssigneeUser(int userId, UpdateTaskAssigneeUserInput input)
     {
-        await _taskAssigneeService.SetTaskAssignees(userId, input.TaskId, input.UserIds);
-    }
-
-    public async Task<List<TaskChangeLogOutput>> ListTaskChangeLog(int taskId)
-    {
-        return await _dbContext
-            .TaskChangeLogs
-            .Where(r => r.TaskId == taskId)
-            .Select(r => new TaskChangeLogOutput
-            {
-                Id = r.Id,
-                Property = r.Property,
-                OldValue = r.OldValue,
-                NewValue = r.NewValue,
-                DateCreated = r.DateCreated,
-                UserId = r.UserId
-            })
-            .OrderBy(r => r.Id)
-            .ToListAsync();
+        var task = await GetByIdInternal(input.TaskId);
+        await _taskAssigneeService.SetTaskAssignees(userId, task, input.UserIds);
     }
 
     public async Task CreateSubtaskRelation(int parentTaskItemId, int taskId)

@@ -33,7 +33,7 @@ public class TaskController : BaseApiController
     [JwtAuthorize]
     public async Task<ServiceResult> ListTaskChangeLog([ValidTaskId] int taskId)
     {
-        return Wrap(await Services.TaskService().ListTaskChangeLog(taskId));
+        return Wrap(await Services.TaskChangeLogService().ListTaskChangeLog(taskId));
     }
 
     [HttpPost]

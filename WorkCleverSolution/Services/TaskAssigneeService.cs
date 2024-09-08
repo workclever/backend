@@ -5,7 +5,7 @@ namespace WorkCleverSolution.Services;
 
 public interface ITaskAssigneeService
 {
-    Task SetTaskAssignees(int actorUserId, int taskId, List<int> userIds);
+    Task SetTaskAssignees(int actorUserId, TaskItem task, List<int> userIds);
 
     Task<List<int>> GetTaskAssignees(int taskId);
 }
@@ -14,17 +14,21 @@ public class TaskAssigneeService : ITaskAssigneeService
 {
     private readonly IRepository<TaskAssignee> _repository;
     private readonly IUserNotificationService _userNotificationService;
+    private readonly ITaskChangeLogService _taskChangeLogService;
+
 
     public TaskAssigneeService(ApplicationDbContext dbContext,
-        IUserNotificationService userNotificationService)
+        IUserNotificationService userNotificationService,
+        ITaskChangeLogService taskChangeLogService)
     {
         _userNotificationService = userNotificationService;
+        _taskChangeLogService = taskChangeLogService;
         _repository = new Repository<TaskAssignee>(dbContext);
     }
 
-    public async Task SetTaskAssignees(int actorUserId, int taskId, List<int> userIds)
+    public async Task SetTaskAssignees(int actorUserId, TaskItem task, List<int> userIds)
     {
-        var taskAssignees = await _repository.Where(r => r.TaskId == taskId).ToListAsync();
+        var taskAssignees = await _repository.Where(r => r.TaskId == task.Id).ToListAsync();
         var taskAssigneeUserIds = taskAssignees.Select(r => r.UserId).ToList();
         foreach (var userId in userIds)
         {
@@ -37,7 +41,7 @@ public class TaskAssigneeService : ITaskAssigneeService
                 // Newly assigned user
                 await _repository.Create(new TaskAssignee
                 {
-                    TaskId = taskId,
+                    TaskId = task.Id,
                     UserId = userId
                 });
                 if (userId != actorUserId)
@@ -46,7 +50,13 @@ public class TaskAssigneeService : ITaskAssigneeService
                     const string content = "Task is assigned to you.";
                     var byUserId = actorUserId;
                     var toUserId = userId;
-                    await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, taskId);
+                    await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, task.Id);
+                    await _taskChangeLogService.CreateChangeLog(
+                        actorUserId,
+                        task,
+                        "TASK_ASSIGNED",
+                        "",
+                        toUserId.ToString());
                 }
             }
         }
@@ -67,7 +77,13 @@ public class TaskAssigneeService : ITaskAssigneeService
                     const string content = "Task is unassigned from you.";
                     var byUserId = actorUserId;
                     var toUserId = alreadyAssignedUser.UserId;
-                    await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, taskId);
+                    await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, task.Id);
+                    await _taskChangeLogService.CreateChangeLog(
+                        actorUserId,
+                        task,
+                        "TASK_UNASSIGNED",
+                        "",
+                        toUserId.ToString());
                 }
             }
         }

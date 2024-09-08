@@ -11,6 +11,7 @@ public interface IServices
     ITaskService TaskService();
     ITaskCommentService TaskCommentService();
     ITaskRelationService TaskRelationService();
+    ITaskChangeLogService TaskChangeLogService();
     IUserEntityAccessManagerService AccessManagerService();
     ITaskRelationTypeDefService TaskRelationTypeDefService();
     ISiteSettingsService SiteSettingsService();
@@ -27,6 +28,7 @@ public class Services : IServices
     private readonly ITaskService _taskService;
     private readonly ITaskCommentService _taskCommentService;
     private readonly ITaskRelationService _taskRelationService;
+    private readonly ITaskChangeLogService _taskChangeLogService;
     private readonly IUserEntityAccessManagerService _accessManagerService;
     private readonly ITaskRelationTypeDefService _taskRelationTypeDefService;
     private readonly ITaskAssigneeService _taskAssigneeService;
@@ -48,7 +50,8 @@ public class Services : IServices
         ISiteSettingsService siteSettingsService,
         ICustomFieldService customFieldService,
         IUserNotificationService userNotificationService,
-        ITaskAssigneeService taskAssigneeService)
+        ITaskAssigneeService taskAssigneeService,
+        ITaskChangeLogService taskChangeLogService)
     {
         _authService = authService;
         _userService = userService;
@@ -64,6 +67,7 @@ public class Services : IServices
         _customFieldService = customFieldService;
         _userNotificationService = userNotificationService;
         _taskAssigneeService = taskAssigneeService;
+        _taskChangeLogService = taskChangeLogService;
     }
 
     public IAuthService AuthService()
@@ -109,6 +113,11 @@ public class Services : IServices
     public ITaskRelationService TaskRelationService()
     {
         return _taskRelationService;
+    }
+
+    public ITaskChangeLogService TaskChangeLogService()
+    {
+        return _taskChangeLogService;
     }
 
     public IUserEntityAccessManagerService AccessManagerService()
