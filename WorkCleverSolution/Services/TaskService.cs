@@ -245,7 +245,6 @@ public class TaskService : ITaskService
 
         ReflectionUtils.SetObjectProperty(task, input.Property, input.Value);
         await _taskRepository.Update(task);
-
         await _taskChangeLogService.CreateChangeLog(userId, task, input.Property, oldValue, newValue);
     }
 
@@ -295,7 +294,7 @@ public class TaskService : ITaskService
         });
 
         // Operating user someone else, notify task assignee user
-        foreach (var taskAssignee in await _taskAssigneeService.GetTaskAssignees(taskId))
+        foreach (var taskAssignee in await _taskAssigneeService.GetTaskAssigneesWithAllStakeholders(taskId))
         {
             const string type = "TASK_ATTACHMENT_UPLOADED";
             const string content = "A file is attached.";

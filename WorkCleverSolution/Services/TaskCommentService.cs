@@ -27,8 +27,8 @@ public class TaskCommentService : ITaskCommentService
     {
         _userNotificationService = userNotificationService;
         _taskAssigneeService = taskAssigneeService;
-        _taskRepository = new Repository<TaskItem>(dbContext);
         _taskCommentRepository = new Repository<TaskComment>(dbContext);
+        _taskRepository = new Repository<TaskItem>(dbContext);
     }
 
     private static TaskCommentOutput MapTaskCommentToOutput(TaskComment r)
@@ -88,7 +88,7 @@ public class TaskCommentService : ITaskCommentService
         await _taskCommentRepository.Create(comment);
 
         // Operating user someone else, notify task assignee user
-        foreach (var taskAssignee in await _taskAssigneeService.GetTaskAssignees(input.TaskId))
+        foreach (var taskAssignee in await _taskAssigneeService.GetTaskAssigneesWithAllStakeholders(input.TaskId))
         {
             const string type = "TASK_COMMENTED";
             const string content = "A comment is made.";

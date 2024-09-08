@@ -8,11 +8,13 @@ public interface ITaskAssigneeService
     Task SetTaskAssignees(int actorUserId, TaskItem task, List<int> userIds);
 
     Task<List<int>> GetTaskAssignees(int taskId);
+    Task<List<int>> GetTaskAssigneesWithAllStakeholders(int taskId);
 }
 
 public class TaskAssigneeService : ITaskAssigneeService
 {
     private readonly IRepository<TaskAssignee> _repository;
+    private readonly IRepository<TaskItem> _taskRepository;
     private readonly IUserNotificationService _userNotificationService;
     private readonly ITaskChangeLogService _taskChangeLogService;
 
@@ -23,6 +25,7 @@ public class TaskAssigneeService : ITaskAssigneeService
     {
         _userNotificationService = userNotificationService;
         _taskChangeLogService = taskChangeLogService;
+        _taskRepository = new Repository<TaskItem>(dbContext);;
         _repository = new Repository<TaskAssignee>(dbContext);
     }
 
@@ -93,6 +96,21 @@ public class TaskAssigneeService : ITaskAssigneeService
     {
         var taskAssignees = await _repository.Where(r => r.TaskId == taskId).ToListAsync();
         var taskAssigneeUserIds = taskAssignees.Select(r => r.UserId).ToList();
+        return taskAssigneeUserIds;
+    }
+
+    public async Task<List<int>> GetTaskAssigneesWithAllStakeholders(int taskId)
+    {
+        var taskAssignees = await _repository.Where(r => r.TaskId == taskId).ToListAsync();
+        var taskAssigneeUserIds = taskAssignees.Select(r => r.UserId).ToList();
+        var task = await _taskRepository.GetById(taskId);
+
+        if (task?.ReporterUserId == null)
+        {
+            return taskAssigneeUserIds;
+        }
+
+        taskAssigneeUserIds.Add((int)task.ReporterUserId);
         return taskAssigneeUserIds;
     }
 }
