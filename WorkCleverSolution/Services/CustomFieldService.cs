@@ -259,18 +259,21 @@ public class CustomFieldService : ICustomFieldService
             .Where(r => r.TaskId == input.TaskId && r.CustomFieldId == input.CustomFieldId)
             .SingleOrDefaultAsync();
 
-        if (taskCustomFieldValue == null)
+        if (taskCustomFieldValue != null)
         {
-            taskCustomFieldValue = new TaskCustomFieldValue
-            {
-                TaskId = input.TaskId,
-                CustomFieldId = input.CustomFieldId,
-            };
-            await _taskCustomFieldValueRepository.Create(taskCustomFieldValue);
+            // TODO find a way to cast properly here
+            taskCustomFieldValue.Value = input.Value;
+            await _taskCustomFieldValueRepository.Update(taskCustomFieldValue);
+            return;
         }
 
-        // TODO cast properly here
-        taskCustomFieldValue.Value = input.Value;
-        await _taskCustomFieldValueRepository.Update(taskCustomFieldValue);
+        taskCustomFieldValue = new TaskCustomFieldValue
+        {
+            TaskId = input.TaskId,
+            CustomFieldId = input.CustomFieldId,
+            // TODO find a way to cast properly here
+            Value = input.Value
+        };
+        await _taskCustomFieldValueRepository.Create(taskCustomFieldValue);
     }
 }
