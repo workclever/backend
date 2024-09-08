@@ -260,16 +260,7 @@ public class TaskService : ITaskService
 
     public async Task UpdateTaskAssigneeUser(int userId, UpdateTaskAssigneeUserInput input)
     {
-        await _taskAssigneeService.SetTaskAssignees(input.TaskId, input.UserIds);
-        // Operating user someone else, notify new assignee user
-        // if (userId != input.UserId)
-        // {
-        //     const string type = "TASK_ASSIGNED";
-        //     const string content = "Task is assigned to you.";
-        //     var byUserId = userId;
-        //     var toUserId = input.UserId;
-        //     await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, input.TaskId);
-        // }
+        await _taskAssigneeService.SetTaskAssignees(userId, input.TaskId, input.UserIds);
     }
 
     public async Task<List<TaskChangeLogOutput>> ListTaskChangeLog(int taskId)

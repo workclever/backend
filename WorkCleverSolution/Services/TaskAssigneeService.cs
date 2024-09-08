@@ -5,8 +5,8 @@ namespace WorkCleverSolution.Services;
 
 public interface ITaskAssigneeService
 {
-    Task SetTaskAssignees(int taskId, List<int> userIds);
-    
+    Task SetTaskAssignees(int actorUserId, int taskId, List<int> userIds);
+
     Task<List<int>> GetTaskAssignees(int taskId);
 }
 
@@ -15,7 +15,6 @@ public class TaskAssigneeService : ITaskAssigneeService
     private readonly IRepository<TaskAssignee> _repository;
     private readonly IUserNotificationService _userNotificationService;
 
-
     public TaskAssigneeService(ApplicationDbContext dbContext,
         IUserNotificationService userNotificationService)
     {
@@ -23,7 +22,7 @@ public class TaskAssigneeService : ITaskAssigneeService
         _repository = new Repository<TaskAssignee>(dbContext);
     }
 
-    public async Task SetTaskAssignees(int taskId, List<int> userIds)
+    public async Task SetTaskAssignees(int actorUserId, int taskId, List<int> userIds)
     {
         var taskAssignees = await _repository.Where(r => r.TaskId == taskId).ToListAsync();
         var taskAssigneeUserIds = taskAssignees.Select(r => r.UserId).ToList();
@@ -41,6 +40,14 @@ public class TaskAssigneeService : ITaskAssigneeService
                     TaskId = taskId,
                     UserId = userId
                 });
+                if (userId != actorUserId)
+                {
+                    const string type = "TASK_ASSIGNED";
+                    const string content = "Task is assigned to you.";
+                    var byUserId = actorUserId;
+                    var toUserId = userId;
+                    await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, taskId);
+                }
             }
         }
 
@@ -54,6 +61,14 @@ public class TaskAssigneeService : ITaskAssigneeService
             {
                 // Unassigned user, remove it
                 await _repository.Delete(alreadyAssignedUser);
+                if (alreadyAssignedUser.UserId != actorUserId)
+                {
+                    const string type = "TASK_UNASSIGNED";
+                    const string content = "Task is unassigned from you.";
+                    var byUserId = actorUserId;
+                    var toUserId = alreadyAssignedUser.UserId;
+                    await _userNotificationService.CreateNotification(byUserId, toUserId, type, content, taskId);
+                }
             }
         }
     }
