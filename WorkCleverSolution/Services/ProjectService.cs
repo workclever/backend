@@ -4,6 +4,7 @@ using WorkCleverSolution.Data;
 using Microsoft.EntityFrameworkCore;
 using WorkCleverSolution.Data.Identity;
 using WorkCleverSolution.Dto.Project;
+using WorkCleverSolution.Dto.Project.Board;
 
 namespace WorkCleverSolution.Services;
 
@@ -53,7 +54,13 @@ public class ProjectService : IProjectService
         try
         {
             await _projectRepository.Create(project);
-            await _accessManagerService.CreateUserEntityAccess(userId, Permissions.CanManageProject, project.Id, "Project");
+            await _accessManagerService.CreateUserEntityAccess(userId, Permissions.CanManageProject, project.Id,
+                "Project");
+            await _boardService.CreateBoard(userId, new CreateBoardInput()
+            {
+                Name = "\ud83d\ude80 First board",
+                ProjectId = project.Id
+            });
         }
         catch (Exception e)
         {
