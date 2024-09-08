@@ -86,18 +86,18 @@ public class ColumnService : IColumnService
         var column = await GetById(columnId);
         if (column != null)
         {
+            var taskIdsInColumn = await _dbContext
+                .TaskItems
+                .Where(r => r.ColumnId == columnId)
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            foreach (var taskId in taskIdsInColumn)
+            {
+                await _taskService.DeleteTask(userId, taskId);
+            }
+            
             await _columnRepository.Delete(column);
-        }
-
-        var taskIdsInColumn = await _dbContext
-            .TaskItems
-            .Where(r => r.ColumnId == columnId)
-            .Select(r => r.Id)
-            .ToListAsync();
-
-        foreach (var taskId in taskIdsInColumn)
-        {
-            await _taskService.DeleteTask(userId, taskId);
         }
     }
 

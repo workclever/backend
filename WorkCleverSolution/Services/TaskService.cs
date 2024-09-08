@@ -160,7 +160,6 @@ public class TaskService : ITaskService
     public async Task DeleteTask(int userId, int taskId)
     {
         var task = await GetByIdInternal(taskId);
-        await _taskRepository.Delete(task);
         // Cleanup everything related to a task, including comments, attachments, changelogs etc
         var comments = await _dbContext
             .TaskComments.Where(r => r.TaskId == taskId)
@@ -186,13 +185,23 @@ public class TaskService : ITaskService
             .UserNotifications.Where(r => r.TaskId == taskId)
             .ToListAsync();
 
+        // Break the parent relation
+        foreach (var parentTask in parentTasks)
+        {
+            await UpdateTaskProperty(userId, new UpdateTaskPropertyInput()
+            {
+                Property = "ParentTaskItemId",
+                Value = null,
+                TaskId = parentTask.Id
+            });
+        }
         _dbContext.TaskComments.RemoveRange(comments);
         _dbContext.TaskRelations.RemoveRange(relations);
-        _dbContext.TaskItems.RemoveRange(parentTasks);
         _dbContext.TaskCustomFieldValues.RemoveRange(customFieldValues);
         _dbContext.TaskChangeLogs.RemoveRange(changeLogs);
         _dbContext.UserNotifications.RemoveRange(notifications);
         await _dbContext.SaveChangesAsync();
+        await _taskRepository.Delete(task);
     }
 
     public async Task<TaskItem> GetByIdInternal(int taskId)
