@@ -9,7 +9,7 @@ public interface IRepository<T> where T : TimeAwareEntity
     Task<T> GetById(int id);
     Task<T> GetByIdWithIncludes(int id, params Expression<Func<T, object>>[] includeProperties);
     IQueryable<T> Where(Expression<Func<T, bool>> predicate);
-    Task Create(T entity);
+    Task<T> Create(T entity);
     Task Update(T entity);
     Task UpdateRange(List<T> entity);
     Task Delete(T entity);
@@ -54,7 +54,7 @@ public class Repository<T> : IRepository<T> where T : TimeAwareEntity
         return _entities.Where(predicate);
     }
 
-    public async Task Create(T entity)
+    public async Task<T> Create(T entity)
     {
         if (entity == null)
         {
@@ -63,6 +63,7 @@ public class Repository<T> : IRepository<T> where T : TimeAwareEntity
 
         await _entities.AddAsync(entity);
         await _dbContext.SaveChangesAsync();
+        return entity;
     }
 
     public async Task Update(T entity)

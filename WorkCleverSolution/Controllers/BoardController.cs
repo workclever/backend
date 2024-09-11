@@ -64,7 +64,22 @@ public class BoardController : BaseApiController
     [JwtAuthorize]
     public async Task<ServiceResult> CreateBoardView([FromBody] CreateBoardViewInput input)
     {
-        await Services.BoardViewService().CreateBoardView(input.BoardId, input.Type);
+        return Wrap(await Services.BoardViewService().CreateBoardView(User.GetUserId(), input));
+    }
+    
+    [HttpPost]
+    [JwtAuthorize]
+    public async Task<ServiceResult> UpdateBoardView([FromBody] UpdateBoardViewInput input)
+    {
+        await Services.BoardViewService().UpdateBoardView(User.GetUserId(), input);
+        return Wrap();
+    }
+    
+    [HttpDelete]
+    [JwtAuthorize]
+    public async Task<ServiceResult> DeleteBoardView([ValidBoardViewId] int boardViewId)
+    {
+        await Services.BoardViewService().DeleteBoardView(User.GetUserId(), boardViewId);
         return Wrap();
     }
 }

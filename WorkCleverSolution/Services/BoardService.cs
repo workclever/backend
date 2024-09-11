@@ -56,8 +56,18 @@ public class BoardService : IBoardService
         };
 
         await _boardRepository.Create(board);
-        await _boardViewService.CreateBoardView(board.Id, "kanban");
-        await _boardViewService.CreateBoardView(board.Id, "tree");
+        await _boardViewService.CreateBoardView(userId, new CreateBoardViewInput()
+        {
+            BoardId = board.Id,
+            Name = "Kanban",
+            Type = "kanban"
+        });
+        await _boardViewService.CreateBoardView(userId, new CreateBoardViewInput()
+        {
+            BoardId = board.Id,
+            Name = "Tree",
+            Type = "tree"
+        });
 
         return MapProjectBoardToOutput(board);
     }

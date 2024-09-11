@@ -3,13 +3,13 @@ using WorkCleverSolution.Attributes.Validation;
 
 namespace WorkCleverSolution.Dto.Project.Board;
 
-public class CreateBoardViewInput
+public class UpdateBoardViewInput
 {
     [Required]
-    [ValidBoardId]
-    public int BoardId { get; set; }
-    
-    [Required] public string Type { get; set; }
+    [ValidBoardViewId]
+    public int BoardViewId { get; set; }
     
     [Required] public string Name { get; set; }
+    
+    [Required]public List<int> VisibleCustomFields { get; set; }
 }
