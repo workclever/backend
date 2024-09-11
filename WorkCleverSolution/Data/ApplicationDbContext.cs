@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using WorkCleverSolution.Services;
 
 namespace WorkCleverSolution.Data;
@@ -10,6 +11,7 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
 {
     public DbSet<Project> Projects { get; set; }
     public DbSet<Board> Boards { get; set; }
+    public DbSet<BoardView> BoardsViews { get; set; }
     public DbSet<Column> Columns { get; set; }
     public DbSet<TaskItem> TaskItems { get; set; }
     public DbSet<TaskAttachment> TaskAttachments { get; set; }
@@ -58,6 +60,12 @@ public class ApplicationDbContext : IdentityDbContext<User, IdentityRole<int>, i
         builder.Entity<CustomField>().HasMany(x => x.SelectOptions).WithOne(x => x.CustomField)
             .HasForeignKey(x => x.CustomFieldId);
         builder.Entity<TaskCustomFieldValue>().HasOne(x => x.CustomField);
+  
+        builder.Entity<BoardView>()
+            .Property(e => e.Config)
+            .HasConversion(
+                v => JsonSerializer.Serialize(v, (JsonSerializerOptions)null),
+                v => JsonSerializer.Deserialize<BoardViewConfig>(v, (JsonSerializerOptions)null));
     }
 
     public async Task<int> SaveChangesAsync()

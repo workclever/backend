@@ -7,6 +7,7 @@ public interface IServices
     IUserNotificationService UserNotificationService();
     IProjectService ProjectService();
     IBoardService BoardService();
+    IBoardViewService BoardViewService();
     IColumnService ColumnService();
     ITaskService TaskService();
     ITaskCommentService TaskCommentService();
@@ -24,6 +25,7 @@ public class Services : IServices
     private readonly IUserService _userService;
     private readonly IProjectService _projectService;
     private readonly IBoardService _boardService;
+    private readonly IBoardViewService _boardViewService;
     private readonly IColumnService _columnService;
     private readonly ITaskService _taskService;
     private readonly ITaskCommentService _taskCommentService;
@@ -41,6 +43,7 @@ public class Services : IServices
         IUserService userService,
         IProjectService projectService,
         IBoardService boardService,
+        IBoardViewService boardViewService,
         ITaskService taskService,
         ITaskCommentService taskCommentService,
         ITaskRelationService taskRelationService,
@@ -57,6 +60,7 @@ public class Services : IServices
         _userService = userService;
         _projectService = projectService;
         _boardService = boardService;
+        _boardViewService = boardViewService;
         _taskService = taskService;
         _taskCommentService = taskCommentService;
         _taskRelationService = taskRelationService;
@@ -93,6 +97,11 @@ public class Services : IServices
     public IBoardService BoardService()
     {
         return _boardService;
+    }
+
+    public IBoardViewService BoardViewService()
+    {
+        return _boardViewService;
     }
 
     public IColumnService ColumnService()

@@ -51,4 +51,20 @@ public class BoardController : BaseApiController
         await Services.BoardService().DeleteBoard(User.GetUserId(), boardId);
         return Wrap();
     }
+    
+    [HttpGet]
+    [JwtAuthorize]
+    public async Task<ServiceResult> ListBoardViewsByBoardId([ValidBoardId] int boardId)
+    {
+        return Wrap(await Services.BoardViewService().ListBoardViewsByBoardId(boardId));
+    }
+    
+    
+    [HttpPost]
+    [JwtAuthorize]
+    public async Task<ServiceResult> CreateBoardView([FromBody] CreateBoardViewInput input)
+    {
+        await Services.BoardViewService().CreateBoardView(input.BoardId, input.Type);
+        return Wrap();
+    }
 }

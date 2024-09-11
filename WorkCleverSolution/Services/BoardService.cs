@@ -21,12 +21,18 @@ public class BoardService : IBoardService
     private readonly IColumnService _columnService;
     private readonly ApplicationDbContext _dbContext;
     private readonly IUserService _userService;
+    private readonly IBoardViewService _boardViewService;
 
-    public BoardService(ApplicationDbContext dbContext, IColumnService columnService, IUserService userService)
+    public BoardService(
+        ApplicationDbContext dbContext, 
+        IColumnService columnService, 
+        IUserService userService, 
+        IBoardViewService boardViewService)
     {
         _dbContext = dbContext;
         _columnService = columnService;
         _userService = userService;
+        _boardViewService = boardViewService;
         _boardRepository = new Repository<Board>(dbContext);
     }
 
@@ -50,6 +56,8 @@ public class BoardService : IBoardService
         };
 
         await _boardRepository.Create(board);
+        await _boardViewService.CreateBoardView(board.Id, "kanban");
+        await _boardViewService.CreateBoardView(board.Id, "tree");
 
         return MapProjectBoardToOutput(board);
     }

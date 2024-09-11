@@ -63,6 +63,7 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IBoardService, BoardService>();
+builder.Services.AddScoped<IBoardViewService, BoardViewService>();
 builder.Services.AddScoped<IColumnService, ColumnService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<ITaskCommentService, TaskCommentService>();
