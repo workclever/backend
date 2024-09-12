@@ -7,7 +7,7 @@ namespace WorkCleverSolution.Services;
 public interface IBoardViewService
 {
     Task<List<BoardView>> ListBoardViewsByBoardId(int boardId);
-    
+
     Task<BoardView> GetById(int boardViewId);
     Task<BoardView> CreateBoardView(int userId, CreateBoardViewInput input);
     Task UpdateBoardView(int userId, UpdateBoardViewInput input);
@@ -39,7 +39,7 @@ public class BoardViewService : IBoardViewService
         {
             UserId = userId,
             BoardId = input.BoardId,
-            Config = new BoardViewConfig(input.Type, input.Name, new List<int>())
+            Config = new BoardViewConfig(input.Type, input.Name, new List<int>(), "ColumnId")
         });
 
         return boardView;
@@ -53,7 +53,12 @@ public class BoardViewService : IBoardViewService
             return;
         }
 
-        boardView.Config = new BoardViewConfig(boardView.Config.Type, input.Name, input.VisibleCustomFields);
+        boardView.Config = new BoardViewConfig(
+            boardView.Config.Type,
+            input.Name,
+            input.VisibleCustomFields,
+            input.GroupKey
+        );
         await _boardViewRepository.Update(boardView);
     }
 

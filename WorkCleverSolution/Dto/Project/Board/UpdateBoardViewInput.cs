@@ -12,4 +12,6 @@ public class UpdateBoardViewInput
     [Required] public string Name { get; set; }
     
     [Required]public List<int> VisibleCustomFields { get; set; }
+    
+    [Required] public string GroupKey { get; set; }
 }

@@ -21,12 +21,15 @@ public readonly struct BoardViewConfig
     public string Name { get;}
     public List<int> VisibleCustomFields { get; }
     
+    public string GroupKey { get;}
+    
     
     [JsonConstructor]
-    public BoardViewConfig(string type, string name, List<int> visibleCustomFields)
+    public BoardViewConfig(string type, string name, List<int> visibleCustomFields, string groupKey)
     {
         Type = type;
         Name = name;
         VisibleCustomFields = visibleCustomFields;
+        GroupKey = groupKey;
     }
 }
