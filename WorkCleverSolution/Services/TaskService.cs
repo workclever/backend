@@ -101,7 +101,7 @@ public class TaskService : ITaskService
             ColumnId = input.ColumnId,
             ReporterUserId = userId,
             ParentTaskItemId = input.ParentTaskItemId,
-            Order = lastOrder == 0 ? 1 : lastOrder + 1
+            Order = lastOrder + 1000
         };
 
         await _taskRepository.Create(task);
@@ -245,7 +245,7 @@ public class TaskService : ITaskService
 
         ReflectionUtils.SetObjectProperty(task, input.Property, input.Value);
         await _taskRepository.Update(task);
-        await _taskChangeLogService.CreateChangeLog(userId, task, input.Property, oldValue, newValue);
+        // await _taskChangeLogService.CreateChangeLog(userId, task, input.Property, oldValue, newValue);
     }
 
     public async Task UpdateTaskAssigneeUser(int userId, UpdateTaskAssigneeUserInput input)
