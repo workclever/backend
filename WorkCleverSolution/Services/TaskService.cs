@@ -70,7 +70,7 @@ public class TaskService : ITaskService
             Slug = $"{taskItem.Project.Slug}-{taskItem.Id}"
         };
     }
-    
+
     private async Task<List<TaskOutput>> ProcessTasksWithAssignees(List<TaskItem> tasks)
     {
         var taskOutputs = new List<TaskOutput>();
@@ -101,7 +101,7 @@ public class TaskService : ITaskService
             ColumnId = input.ColumnId,
             ReporterUserId = userId,
             ParentTaskItemId = input.ParentTaskItemId,
-            Order = lastOrder + 1000
+            Order = lastOrder + 100000
         };
 
         await _taskRepository.Create(task);
@@ -125,7 +125,7 @@ public class TaskService : ITaskService
             .Where(r => r.ProjectId == projectId)
             .Include(r => r.Project)
             .ToListAsync();
-   
+
         return await ProcessTasksWithAssignees(tasks);
     }
 
@@ -136,18 +136,17 @@ public class TaskService : ITaskService
 
         if (projectId == 0)
         {
-
             return await ProcessTasksWithAssignees(await _taskRepository
-           .Where(r => userProjectIds.Contains(r.ProjectId) &&
-                        (r.Description.ToLower().Contains(text) ||
-                        r.Title.ToLower().Contains(text) ||
-                        text.Contains(r.Id.ToString()))
-           )
-           .ToListAsync());
+                .Where(r => userProjectIds.Contains(r.ProjectId) &&
+                            (r.Description.ToLower().Contains(text) ||
+                             r.Title.ToLower().Contains(text) ||
+                             text.Contains(r.Id.ToString()))
+                )
+                .ToListAsync());
         }
 
         return await ProcessTasksWithAssignees(await _taskRepository
-        // TODO find a better way to incorporate [ValidProjectId]
+            // TODO find a better way to incorporate [ValidProjectId]
             .Where(r => r.ProjectId == projectId && userProjectIds.Contains(projectId) &&
                         (r.Description.ToLower().Contains(text) ||
                          r.Title.ToLower().Contains(text) ||
@@ -188,13 +187,20 @@ public class TaskService : ITaskService
         // Break the parent relation
         foreach (var parentTask in parentTasks)
         {
-            await UpdateTaskProperty(userId, new UpdateTaskPropertyInput()
+            await UpdateTaskProperty(userId, new UpdateTaskPropertyInput
             {
-                Property = "ParentTaskItemId",
-                Value = null,
+                Params = new List<UpdateTaskPropertyInputParam>
+                {
+                    new UpdateTaskPropertyInputParam
+                    {
+                        Property = "ParentTaskItemId",
+                        Value = null,
+                    }
+                },
                 TaskId = parentTask.Id
             });
         }
+
         _dbContext.TaskComments.RemoveRange(comments);
         _dbContext.TaskRelations.RemoveRange(relations);
         _dbContext.TaskCustomFieldValues.RemoveRange(customFieldValues);
@@ -220,32 +226,68 @@ public class TaskService : ITaskService
         await UpdateTaskProperty(userId, new UpdateTaskPropertyInput
         {
             TaskId = input.TaskId,
-            Property = "BoardId",
-            Value = input.TargetBoardId.ToString()
-        });
-        await UpdateTaskProperty(userId, new UpdateTaskPropertyInput
-        {
-            TaskId = input.TaskId,
-            Property = "ColumnId",
-            Value = input.TargetColumnId.ToString()
+            Params = new List<UpdateTaskPropertyInputParam>
+            {
+                new UpdateTaskPropertyInputParam
+                {
+                    Property = "BoardId",
+                    Value = input.TargetBoardId.ToString(),
+                },
+                new UpdateTaskPropertyInputParam
+                {
+                    Property = "ColumnId",
+                    Value = input.TargetColumnId.ToString(),
+                }
+            },
         });
     }
 
     public async Task UpdateTaskProperty(int userId, UpdateTaskPropertyInput input)
     {
-        var task = await GetByIdInternal(input.TaskId);
-        var oldValue = ReflectionUtils.GetObjectPropertyValue(task, input.Property);
-        var newValue = input.Value;
-
-        // If old and new value are same, we don't need to update the task and create a changelog
-        if (oldValue == newValue)
+        foreach (var param in input.Params)
         {
-            return;
-        }
+            var task = await GetByIdInternal(input.TaskId);
+            var oldValue = ReflectionUtils.GetObjectPropertyValue(task, param.Property);
+            var newValue = param.Value;
 
-        ReflectionUtils.SetObjectProperty(task, input.Property, input.Value);
-        await _taskRepository.Update(task);
-        // await _taskChangeLogService.CreateChangeLog(userId, task, input.Property, oldValue, newValue);
+            // If old and new value are same, we don't need to update the task and create a changelog
+            if (oldValue == newValue)
+            {
+                continue;
+            }
+
+            if (param.Property == "BoardId")
+            {
+                task.BoardId = Convert.ToInt32(newValue);
+            }
+            else if (param.Property == "ColumnId")
+            {
+                task.ColumnId = Convert.ToInt32(newValue);
+            }
+            else if (param.Property == "ParentTaskItemId")
+            {
+                task.ParentTaskItemId = Convert.ToInt32(newValue);
+            }
+            else if (param.Property == "ParentTaskItemId")
+            {
+                task.ParentTaskItemId = Convert.ToInt32(newValue);
+            }
+            else if (param.Property == "Order")
+            {
+                task.Order = Convert.ToInt32(newValue);
+            }
+            else if (param.Property == "Title")
+            {
+                task.Title = newValue;
+            }
+            else if (param.Property == "Description")
+            {
+                task.Description = newValue;
+            }
+
+            await _taskRepository.Update(task);
+            await _taskChangeLogService.CreateChangeLog(userId, task, param.Property, oldValue, newValue);
+        }
     }
 
     public async Task UpdateTaskAssigneeUser(int userId, UpdateTaskAssigneeUserInput input)
